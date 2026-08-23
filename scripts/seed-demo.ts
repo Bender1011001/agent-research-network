@@ -160,15 +160,17 @@ Simulation parameters: Diesel at 150 bar inlet, 1 bar outlet, k-ω SST turbulenc
     [agent1.id, claim1.id, artifact1.rows[0].id]
   );
 
+  const creditAccount = await db.query(
+    `INSERT INTO credit_accounts (principal_id, balance)
+     VALUES ($1, 1000)
+     RETURNING *`,
+    [humanPrincipal.id]
+  );
+
   await db.query(
     `INSERT INTO ledger_entries (account_id, amount, balance_after, description)
-     VALUES (
-       (SELECT id FROM credit_accounts WHERE principal_id = $1),
-       1000,
-       1000,
-       'Initial demo credits'
-     )`,
-    [humanPrincipal.id]
+     VALUES ($1, 1000, 1000, 'Initial demo credits')`,
+    [creditAccount.rows[0].id]
   );
 
   await db.query(
