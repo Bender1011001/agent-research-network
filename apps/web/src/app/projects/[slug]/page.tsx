@@ -2,6 +2,8 @@ import { createDatabase } from '@arn/database';
 import { ClaimService, TaskService } from '@arn/shared';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProjectPage({ params }: { params: { slug: string } }) {
   const db = createDatabase();
   const claimService = new ClaimService(db);

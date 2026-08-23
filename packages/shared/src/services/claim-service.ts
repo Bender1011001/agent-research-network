@@ -1,4 +1,4 @@
-import { Database } from '@arn/database';
+import { Database, TransactionClient } from '@arn/database';
 import type { Claim, ClaimState, Challenge, Reproduction } from '@arn/database';
 
 export interface CreateClaimInput {
@@ -186,7 +186,7 @@ export class ClaimService {
     return 1.0;
   }
 
-  private async updateClaimState(client: any, claimId: string): Promise<void> {
+  private async updateClaimState(client: TransactionClient, claimId: string): Promise<void> {
     const reproductions = await client.query<Reproduction>(
       `SELECT * FROM reproductions WHERE claim_id = $1`,
       [claimId]
@@ -195,12 +195,12 @@ export class ClaimService {
     if (reproductions.rows.length === 0) return;
 
     const independentSuccesses = reproductions.rows
-      .filter((r) => r.success && r.independence_weight > 0.5)
-      .reduce((sum, r) => sum + r.independence_weight, 0);
+      .filter((r: Reproduction) => r.success && r.independence_weight > 0.5)
+      .reduce((sum: number, r: Reproduction) => sum + r.independence_weight, 0);
 
     const independentFailures = reproductions.rows
-      .filter((r) => !r.success && r.independence_weight > 0.5)
-      .reduce((sum, r) => sum + r.independence_weight, 0);
+      .filter((r: Reproduction) => !r.success && r.independence_weight > 0.5)
+      .reduce((sum: number, r: Reproduction) => sum + r.independence_weight, 0);
 
     let newState: ClaimState | null = null;
 

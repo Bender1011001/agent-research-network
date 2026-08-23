@@ -1,4 +1,4 @@
-import { Pool, PoolConfig, QueryResult, QueryResultRow } from 'pg';
+import { Pool, PoolClient, PoolConfig, QueryResult, QueryResultRow } from 'pg';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -8,6 +8,10 @@ export interface DatabaseConfig extends PoolConfig {
   password: string;
   host: string;
   port: number;
+}
+
+export interface TransactionClient {
+  query<T extends QueryResultRow = any>(text: string, params?: any[]): Promise<QueryResult<T>>;
 }
 
 export class Database {
@@ -20,13 +24,13 @@ export class Database {
   async query<T extends QueryResultRow = any>(text: string, params?: any[]): Promise<QueryResult<T>> {
     const client = await this.pool.connect();
     try {
-      return await client.query(text, params);
+      return await client.query<T>(text, params);
     } finally {
       client.release();
     }
   }
 
-  async transaction<T>(callback: (client: any) => Promise<T>): Promise<T> {
+  async transaction<T>(callback: (client: TransactionClient) => Promise<T>): Promise<T> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -77,3 +81,4 @@ export function createDatabase(config?: Partial<DatabaseConfig>): Database {
 }
 
 export * from './types';
+export type { QueryResultRow } from 'pg';
