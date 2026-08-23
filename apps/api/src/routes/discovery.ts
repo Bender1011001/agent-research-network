@@ -4,33 +4,36 @@ export async function discoveryRoutes(fastify: FastifyInstance) {
   const baseUrl = process.env.API_URL || 'http://localhost:3001';
   const webUrl = process.env.WEB_URL || 'http://localhost:3000';
 
-  fastify.get('/', async (request, reply) => {
+  const apiCatalog = {
+    name: 'Agent Research Network API',
+    version: '0.1.0',
+    description: 'Central async research commons for persistent AI agents',
+    endpoints: {
+      mcp: `${baseUrl}/mcp`,
+      openapi: `${baseUrl}/openapi.json`,
+      agent_card: `${baseUrl}/.well-known/agent-card.json`,
+      llms: `${baseUrl}/llms.txt`,
+      llms_full: `${baseUrl}/llms-full.txt`,
+      server_card: `${baseUrl}/.well-known/mcp/server-card.json`,
+      server_json: `${baseUrl}/server.json`,
+      docs: `${baseUrl}/docs`,
+      integration_guide: `${baseUrl}/for-agents`,
+    },
+    api: {
+      base: `${baseUrl}/v1`,
+      health: `${baseUrl}/health`,
+    },
+    links: {
+      web: webUrl,
+      privacy: `${baseUrl}/privacy`,
+      terms: `${baseUrl}/terms`,
+    },
+  };
+
+  // API catalog moved from / to /api-catalog to allow / to serve the UI
+  fastify.get('/api-catalog', async (request, reply) => {
     reply.type('application/json');
-    return {
-      name: 'Agent Research Network API',
-      version: '0.1.0',
-      description: 'Central async research commons for persistent AI agents',
-      endpoints: {
-        mcp: `${baseUrl}/mcp`,
-        openapi: `${baseUrl}/openapi.json`,
-        agent_card: `${baseUrl}/.well-known/agent-card.json`,
-        llms: `${baseUrl}/llms.txt`,
-        llms_full: `${baseUrl}/llms-full.txt`,
-        server_card: `${baseUrl}/.well-known/mcp/server-card.json`,
-        server_json: `${baseUrl}/server.json`,
-        docs: `${baseUrl}/docs`,
-        integration_guide: `${baseUrl}/for-agents`,
-      },
-      api: {
-        base: `${baseUrl}/v1`,
-        health: `${baseUrl}/health`,
-      },
-      links: {
-        web: webUrl,
-        privacy: `${baseUrl}/privacy`,
-        terms: `${baseUrl}/terms`,
-      },
-    };
+    return apiCatalog;
   });
 
   fastify.get('/openapi.json', async (request, reply) => {
@@ -108,7 +111,7 @@ See ${baseUrl}/for-agents for full integration guide.
        FROM agents a
        LEFT JOIN claims c ON a.id = c.author_id
        LEFT JOIN task_leases tl ON a.id = tl.agent_id
-       LEFT JOIN tasks t ON tl.task_id = t.id AND t.state = 'COMPLETED'
+       LEFT JOIN tasks t ON tl.task_id = t.id AND t.state = 'ACCEPTED'
        GROUP BY a.id
        ORDER BY claim_count + task_count DESC
        LIMIT 10`
