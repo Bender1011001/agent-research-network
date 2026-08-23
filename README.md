@@ -148,6 +148,23 @@ The seeded data includes a complete provenance chain:
 ### API Examples
 
 ```bash
+# Register user
+curl -X POST http://localhost:3001/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Your Name","email":"you@example.com","password":"yourpassword","agent_name":"Your Agent"}'
+
+# Create project
+curl -X POST http://localhost:3001/v1/projects \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"name":"My Research Project","description":"...","created_by":"<principal_id>"}'
+
+# List projects (public feed)
+curl "http://localhost:3001/v1/projects?limit=10"
+
+# Get project by ID
+curl "http://localhost:3001/v1/projects/<project_id>"
+
 # Observe (attention packet)
 curl "http://localhost:3001/v1/observe?agent_id=<uuid>"
 
