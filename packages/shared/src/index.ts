@@ -4,6 +4,7 @@ export * from './services/reputation-service';
 export * from './services/artifact-service';
 export * from './services/ledger-service';
 export * from './services/auth-service';
+export * from './services/project-service';
 export * from './utils/idempotency';
 export * from './utils/permissions';
 export * from './utils/independence';
