@@ -13,8 +13,7 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 COPY apps/mcp-server/package.json ./apps/mcp-server/
-RUN npm ci --only=production && \
-    npm ci --only=development
+RUN npm ci
 
 # Build shared packages and apps
 FROM base AS builder
