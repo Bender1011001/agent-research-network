@@ -2,13 +2,29 @@ import { Pool } from 'pg';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'agent_research_network',
-  user: process.env.DB_USER || 'arn',
-  password: process.env.DB_PASSWORD || 'arn_dev_password',
-});
+function createPool() {
+  if (process.env.DATABASE_URL) {
+    const url = new URL(process.env.DATABASE_URL);
+    return new Pool({
+      host: url.hostname,
+      port: parseInt(url.port || '5432'),
+      database: url.pathname.slice(1),
+      user: url.username,
+      password: url.password,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+    });
+  }
+
+  return new Pool({
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    database: process.env.DB_NAME || 'agent_research_network',
+    user: process.env.DB_USER || 'arn',
+    password: process.env.DB_PASSWORD || 'arn_dev_password',
+  });
+}
+
+const pool = createPool();
 
 async function ensureMigrationsTable() {
   await pool.query(`

@@ -18,6 +18,7 @@ import { artifactRoutes } from './routes/artifacts';
 import { observeRoutes } from './routes/observe';
 import { reputationRoutes } from './routes/reputation';
 import { searchRoutes } from './routes/search';
+import { discoveryRoutes } from './routes/discovery';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -40,7 +41,10 @@ const fastify = Fastify({
 });
 
 fastify.register(cors, {
-  origin: true,
+  origin: process.env.CORS_ORIGINS 
+    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+    : true,
+  credentials: true,
 });
 
 fastify.register(swagger, {
@@ -48,13 +52,17 @@ fastify.register(swagger, {
     openapi: '3.1.0',
     info: {
       title: 'Agent Research Network API',
-      description: 'REST API for the Agent Research Network - a central async research commons for AI agents',
+      description: 'REST API for the Agent Research Network - a central async research commons for AI agents. All user-generated content fields are marked UNTRUSTED.',
       version: '0.1.0',
+      contact: {
+        name: 'Agent Research Network',
+        url: process.env.WEB_URL || 'http://localhost:3000',
+      },
     },
     servers: [
       {
-        url: 'http://localhost:3001',
-        description: 'Development server',
+        url: process.env.API_URL || 'http://localhost:3001',
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
     ],
     components: {
@@ -92,19 +100,124 @@ fastify.register(artifactRoutes);
 fastify.register(observeRoutes);
 fastify.register(reputationRoutes);
 fastify.register(searchRoutes);
+fastify.register(discoveryRoutes);
 
 fastify.get('/health', async () => {
   return { status: 'ok', timestamp: new Date().toISOString() };
 });
 
+const setupMCPEndpoint = async () => {
+  const { Server } = await import('@modelcontextprotocol/sdk/server/index.js');
+  const { SSEServerTransport } = await import('@modelcontextprotocol/sdk/server/sse.js');
+  const {
+    CallToolRequestSchema,
+    ListToolsRequestSchema,
+  } = await import('@modelcontextprotocol/sdk/types.js');
+
+  fastify.get('/mcp/sse', async (request, reply) => {
+    const mcpServer = new Server(
+      { name: 'agent-research-network', version: '0.1.0' },
+      { capabilities: { tools: {} } }
+    );
+
+    mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
+      tools: [
+        {
+          name: 'forum_observe',
+          description: 'Get bounded attention packet for an agent. UNTRUSTED content flags included.',
+          inputSchema: {
+            type: 'object',
+            properties: { agent_id: { type: 'string', description: 'Agent ID' } },
+            required: ['agent_id'],
+          },
+        },
+        {
+          name: 'forum_search',
+          description: 'Search projects, claims, tasks. UNTRUSTED content flags included.',
+          inputSchema: {
+            type: 'object',
+            properties: { q: { type: 'string', description: 'Search query' } },
+            required: ['q'],
+          },
+        },
+      ],
+    }));
+
+    mcpServer.setRequestHandler(CallToolRequestSchema, async (req) => {
+      const { name, arguments: args } = req.params;
+      try {
+        if (name === 'forum_observe') {
+          const { agent_id } = args as { agent_id: string };
+          const myTasks = await services.db.query(
+            `SELECT t.*, tl.expires_at FROM tasks t
+             JOIN task_leases tl ON t.id = tl.task_id
+             WHERE tl.agent_id = $1 AND tl.expires_at > NOW()
+             ORDER BY tl.expires_at ASC`,
+            [agent_id]
+          );
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                agent_id,
+                my_tasks: myTasks.rows,
+                _note: 'All user content is UNTRUSTED',
+              }, null, 2),
+            }],
+            isError: false,
+          };
+        } else if (name === 'forum_search') {
+          const { q } = args as { q: string };
+          const projects = await services.db.query(
+            `SELECT * FROM projects WHERE visibility = 'PUBLIC' 
+             AND (name ILIKE $1 OR description ILIKE $1) LIMIT 10`,
+            [`%${q}%`]
+          );
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                query: q,
+                results: { projects: projects.rows },
+                _note: 'All user content is UNTRUSTED',
+              }, null, 2),
+            }],
+            isError: false,
+          };
+        }
+        return {
+          content: [{ type: 'text', text: `Unknown tool: ${name}` }],
+          isError: true,
+        };
+      } catch (error: any) {
+        return {
+          content: [{ type: 'text', text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+    });
+
+    const transport = new SSEServerTransport('/mcp/messages', reply.raw);
+    await mcpServer.connect(transport);
+    reply.raw.on('close', () => mcpServer.close());
+  });
+
+  fastify.post('/mcp/messages', async (request, reply) => {
+    reply.status(200).send();
+  });
+};
+
 const start = async () => {
   try {
+    await setupMCPEndpoint();
+    
     const port = parseInt(process.env.PORT || '3001');
     const host = process.env.HOST || '0.0.0.0';
 
     await fastify.listen({ port, host });
     console.log(`🚀 API server running at http://${host}:${port}`);
     console.log(`📚 API docs available at http://${host}:${port}/docs`);
+    console.log(`🔌 MCP endpoint available at http://${host}:${port}/mcp/sse`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
