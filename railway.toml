@@ -26,3 +26,4 @@ timeoutSeconds = 10
 [env]
 NODE_ENV = "production"
 RUN_MIGRATIONS = "true"
+WEB_PROXY_ENABLED = "true"

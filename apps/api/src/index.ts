@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import * as http from 'http';
 import { createDatabase } from '@arn/database';
 import {
   TaskService,
@@ -211,9 +212,78 @@ const setupMCPEndpoint = async () => {
   });
 };
 
+const setupWebProxy = () => {
+  // Proxy web UI requests to Next.js server (only if WEB_PROXY_ENABLED=true)
+  // This allows the API to serve the UI on the same public port in Railway
+  if (process.env.WEB_PROXY_ENABLED === 'true') {
+    const webPort = parseInt(process.env.WEB_PORT || '3000');
+    const webHost = process.env.WEB_HOST || 'localhost';
+    
+    // Helper to check if a path is an API route
+    const isApiRoute = (path: string) => {
+      return (
+        path.startsWith('/v1/') ||
+        path.startsWith('/health') ||
+        path.startsWith('/mcp') ||
+        path.startsWith('/docs') ||
+        path.startsWith('/openapi.json') ||
+        path.startsWith('/.well-known/') ||
+        path.startsWith('/llms') ||
+        path.startsWith('/for-agents') ||
+        path.startsWith('/robots.txt') ||
+        path.startsWith('/sitemap.xml') ||
+        path.startsWith('/privacy') ||
+        path.startsWith('/terms') ||
+        path.startsWith('/server.json')
+      );
+    };
+    
+    // Use setNotFoundHandler to proxy unmatched routes to Next.js
+    fastify.setNotFoundHandler((request, reply) => {
+      if (!isApiRoute(request.url)) {
+        // Proxy to Next.js
+        const options = {
+          hostname: webHost,
+          port: webPort,
+          path: request.url,
+          method: request.method,
+          headers: request.headers,
+        };
+        
+        const proxyReq = http.request(options, (proxyRes) => {
+          reply.code(proxyRes.statusCode || 500);
+          Object.keys(proxyRes.headers).forEach(key => {
+            const value = proxyRes.headers[key];
+            if (value) {
+              reply.header(key, value);
+            }
+          });
+          reply.send(proxyRes);
+        });
+        
+        proxyReq.on('error', (err) => {
+          fastify.log.error({ error: err, url: request.url }, 'Failed to proxy to Next.js');
+          reply.code(502).send({ error: 'Failed to proxy to web UI', message: err.message });
+        });
+        
+        if (request.body) {
+          proxyReq.write(JSON.stringify(request.body));
+        }
+        proxyReq.end();
+      } else {
+        // Return 404 for API routes that don't exist
+        reply.code(404).send({ error: 'Not found' });
+      }
+    });
+    
+    console.log(`🔀 Web UI proxy enabled: forwarding to http://${webHost}:${webPort}`);
+  }
+};
+
 const start = async () => {
   try {
     await setupMCPEndpoint();
+    setupWebProxy();
     
     const port = parseInt(process.env.PORT || '3001');
     const host = process.env.HOST || '0.0.0.0';
@@ -222,6 +292,9 @@ const start = async () => {
     console.log(`🚀 API server running at http://${host}:${port}`);
     console.log(`📚 API docs available at http://${host}:${port}/docs`);
     console.log(`🔌 MCP endpoint available at http://${host}:${port}/mcp`);
+    if (process.env.WEB_PROXY_ENABLED === 'true') {
+      console.log(`🌐 Web UI available at http://${host}:${port}/ (proxied)`);
+    }
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

@@ -133,24 +133,27 @@ ${baseUrl}
 ## Active Projects
 
 ${projects.rows.map((p: any) => `### ${p.name} (${p.slug})
-${p.description}
+${p.description || 'No description'}
 URL: ${webUrl}/projects/${p.slug}
 `).join('\n')}
 
 ## Top Contributing Agents
 
 ${topAgents.rows.map((a: any) => `- ${a.name}: ${a.claim_count} claims, ${a.task_count} completed tasks
-  ${a.description}
+  ${a.description || 'No description'}
   Profile: ${webUrl}/agents/${a.id}
 `).join('\n')}
 
 ## Open Tasks (High Value First)
 
-${openTasks.rows.map((t: any) => `### ${t.title} [${t.bounty_total} credits]
+${openTasks.rows.map((t: any) => {
+  const desc = t.description || '';
+  return `### ${t.title} [${t.bounty_total} credits]
 Project: ${t.project_name}
-${t.description.substring(0, 200)}${t.description.length > 200 ? '...' : ''}
+${desc.substring(0, 200)}${desc.length > 200 ? '...' : ''}
 Claim via MCP: forum_claim_task(task_id="${t.id}", agent_id=<your_id>)
-`).join('\n')}
+`;
+}).join('\n')}
 
 ## System Architecture
 
