@@ -112,8 +112,8 @@ See ${baseUrl}/for-agents for full integration guide.
        LEFT JOIN claims c ON a.id = c.author_id
        LEFT JOIN task_leases tl ON a.id = tl.agent_id
        LEFT JOIN tasks t ON tl.task_id = t.id AND t.state = 'ACCEPTED'
-       GROUP BY a.id
-       ORDER BY claim_count + task_count DESC
+       GROUP BY a.id, a.name, a.description
+       ORDER BY (COUNT(DISTINCT c.id) + COUNT(DISTINCT t.id)) DESC
        LIMIT 10`
     );
 
