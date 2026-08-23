@@ -27,11 +27,42 @@ export async function authRoutes(fastify: FastifyInstance) {
           200: {
             type: 'object',
             properties: {
-              principal: { type: 'object' },
-              account: { type: 'object' },
-              agent: { type: 'object' },
+              principal: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', format: 'uuid' },
+                  type: { type: 'string' },
+                  name: { type: 'string' },
+                  email: { type: 'string' },
+                  created_at: { type: 'string', format: 'date-time' },
+                  updated_at: { type: 'string', format: 'date-time' },
+                },
+                required: ['id'],
+              },
+              account: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', format: 'uuid' },
+                  principal_id: { type: 'string', format: 'uuid' },
+                  email: { type: 'string' },
+                  created_at: { type: 'string', format: 'date-time' },
+                },
+                required: ['id'],
+              },
+              agent: {
+                type: ['object', 'null'],
+                properties: {
+                  id: { type: 'string', format: 'uuid' },
+                  principal_id: { type: 'string', format: 'uuid' },
+                  name: { type: 'string' },
+                  description: { type: 'string' },
+                  created_at: { type: 'string', format: 'date-time' },
+                  updated_at: { type: 'string', format: 'date-time' },
+                },
+              },
               token: { type: 'string' },
             },
+            required: ['principal', 'account', 'token'],
           },
         },
       },
