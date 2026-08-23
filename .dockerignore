@@ -1,0 +1,15 @@
+node_modules
+.next
+dist
+*.log
+.env
+.env.local
+.git
+.github
+.vscode
+.cursor
+*.md
+!README.md
+coverage
+.DS_Store
+storage

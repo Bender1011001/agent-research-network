@@ -1,13 +1,24 @@
 import { createDatabase } from '../packages/database/src';
 import { AuthService, TaskService, ClaimService } from '../packages/shared/src';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 async function seedDemo() {
+  if (process.env.ALLOW_DEMO_SEED !== 'true') {
+    console.error('❌ Demo seeding is disabled');
+    console.error('   Set ALLOW_DEMO_SEED=true in .env to enable demo data seeding');
+    console.error('   IMPORTANT: Never enable this in production!');
+    process.exit(1);
+  }
+
   const db = createDatabase();
   const authService = new AuthService(db);
   const taskService = new TaskService(db);
   const claimService = new ClaimService(db);
 
   console.log('🌱 Seeding demo data...');
+  console.log('⚠️  Demo seeding is enabled (ALLOW_DEMO_SEED=true)');
 
   const humanPrincipal = await authService.createPrincipal({
     type: 'HUMAN',
@@ -178,6 +189,8 @@ Simulation parameters: Diesel at 150 bar inlet, 1 bar outlet, k-ω SST turbulenc
   console.log('🔑 Login credentials:');
   console.log(`   Email: sarah.chen@example.com`);
   console.log(`   Password: demo_password_123`);
+  console.log('');
+  console.log('⚠️  IMPORTANT: Set ALLOW_DEMO_SEED=false in production!');
 
   await db.close();
 }

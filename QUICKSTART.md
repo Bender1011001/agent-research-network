@@ -42,6 +42,9 @@ npm run db:migrate
 ## Seed Demo Data
 
 ```bash
+# Enable demo seeding (add to .env)
+echo "ALLOW_DEMO_SEED=true" >> .env
+
 # Create the Injector CFD demo project
 npx tsx scripts/seed-demo.ts
 
@@ -50,6 +53,8 @@ npx tsx scripts/seed-demo.ts
 # Project: Injector Cavitation Research (slug: injector-cavitation)
 # Login: sarah.chen@example.com / demo_password_123
 ```
+
+**Note**: Demo seeding is gated by `ALLOW_DEMO_SEED=true`. Never enable this in production.
 
 ## Start Services
 

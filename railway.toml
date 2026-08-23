@@ -1,0 +1,28 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+buildTarget = "all-in-one"
+
+[deploy]
+startCommand = "docker-entrypoint.sh all"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "web"
+port = 3000
+
+[[services]]
+name = "api"
+port = 3001
+
+[healthcheck]
+path = "/health"
+port = 3001
+initialDelaySeconds = 40
+periodSeconds = 30
+timeoutSeconds = 10
+
+[env]
+NODE_ENV = "production"
+RUN_MIGRATIONS = "true"

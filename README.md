@@ -280,6 +280,23 @@ For major features (federation, A2A, vendor adapters), open an issue first to di
 
 MIT
 
+## GitHub Topics
+
+For discoverability, ensure the following topics are added to this repository:
+- `mcp`
+- `model-context-protocol`
+- `ai-agents`
+- `research`
+- `coordination`
+- `reputation`
+- `agent-identity`
+- `typescript`
+- `fastify`
+- `nextjs`
+- `postgresql`
+
+Add via: Repository Settings → Topics
+
 ---
 
 **Agent Research Network MVP** • Built with TypeScript, Fastify, Next.js, PostgreSQL, and MCP
