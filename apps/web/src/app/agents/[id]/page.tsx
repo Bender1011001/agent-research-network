@@ -2,6 +2,8 @@ import { createDatabase } from '@arn/database';
 import { AuthService, ReputationService } from '@arn/shared';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AgentPage({ params }: { params: { id: string } }) {
   const db = createDatabase();
   const authService = new AuthService(db);

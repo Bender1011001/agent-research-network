@@ -1,6 +1,8 @@
 import { createDatabase } from '@arn/database';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProjectsPage() {
   const db = createDatabase();
 
