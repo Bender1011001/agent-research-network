@@ -118,31 +118,41 @@ fastify.get('/', async (request, reply) => {
     const webPort = parseInt(process.env.WEB_PORT || '3000');
     const webHost = process.env.WEB_HOST || 'localhost';
     
-    const options = {
-      hostname: webHost,
-      port: webPort,
-      path: '/',
-      method: 'GET',
-      headers: request.headers,
-    };
-    
-    const proxyReq = http.request(options, (proxyRes) => {
-      reply.code(proxyRes.statusCode || 500);
-      Object.keys(proxyRes.headers).forEach(key => {
-        const value = proxyRes.headers[key];
-        if (value) {
-          reply.header(key, value);
-        }
+    return new Promise<void>((resolve, reject) => {
+      const options = {
+        hostname: webHost,
+        port: webPort,
+        path: '/',
+        method: 'GET',
+        headers: {
+          ...request.headers,
+        },
+      };
+      
+      delete options.headers['host'];
+      delete options.headers['content-length'];
+      
+      const proxyReq = http.request(options, (proxyRes) => {
+        reply.code(proxyRes.statusCode || 500);
+        Object.keys(proxyRes.headers).forEach(key => {
+          const value = proxyRes.headers[key];
+          if (value) {
+            reply.header(key, value);
+          }
+        });
+        proxyRes.on('end', () => resolve());
+        proxyRes.on('error', reject);
+        reply.send(proxyRes);
       });
-      reply.send(proxyRes);
+      
+      proxyReq.on('error', (err) => {
+        fastify.log.error({ error: err, url: '/' }, 'Failed to proxy / to Next.js');
+        reply.code(502).send({ error: 'Failed to proxy to web UI', message: err.message });
+        reject(err);
+      });
+      
+      proxyReq.end();
     });
-    
-    proxyReq.on('error', (err) => {
-      fastify.log.error({ error: err, url: '/' }, 'Failed to proxy / to Next.js');
-      reply.code(502).send({ error: 'Failed to proxy to web UI', message: err.message });
-    });
-    
-    proxyReq.end();
   } else {
     // Serve API catalog when proxy is disabled (development/API-only mode)
     const baseUrl = process.env.API_URL || 'http://localhost:3001';
@@ -312,37 +322,47 @@ const setupWebProxy = () => {
     };
     
     // Use setNotFoundHandler to proxy unmatched routes to Next.js
-    fastify.setNotFoundHandler((request, reply) => {
+    fastify.setNotFoundHandler(async (request, reply) => {
       if (!isApiRoute(request.url)) {
         // Proxy to Next.js
-        const options = {
-          hostname: webHost,
-          port: webPort,
-          path: request.url,
-          method: request.method,
-          headers: request.headers,
-        };
-        
-        const proxyReq = http.request(options, (proxyRes) => {
-          reply.code(proxyRes.statusCode || 500);
-          Object.keys(proxyRes.headers).forEach(key => {
-            const value = proxyRes.headers[key];
-            if (value) {
-              reply.header(key, value);
-            }
+        return new Promise<void>((resolve, reject) => {
+          const options = {
+            hostname: webHost,
+            port: webPort,
+            path: request.url,
+            method: request.method,
+            headers: {
+              ...request.headers,
+            },
+          };
+          
+          delete options.headers['host'];
+          delete options.headers['content-length'];
+          
+          const proxyReq = http.request(options, (proxyRes) => {
+            reply.code(proxyRes.statusCode || 500);
+            Object.keys(proxyRes.headers).forEach(key => {
+              const value = proxyRes.headers[key];
+              if (value) {
+                reply.header(key, value);
+              }
+            });
+            proxyRes.on('end', () => resolve());
+            proxyRes.on('error', reject);
+            reply.send(proxyRes);
           });
-          reply.send(proxyRes);
+          
+          proxyReq.on('error', (err) => {
+            fastify.log.error({ error: err, url: request.url }, 'Failed to proxy to Next.js');
+            reply.code(502).send({ error: 'Failed to proxy to web UI', message: err.message });
+            reject(err);
+          });
+          
+          if (request.body) {
+            proxyReq.write(JSON.stringify(request.body));
+          }
+          proxyReq.end();
         });
-        
-        proxyReq.on('error', (err) => {
-          fastify.log.error({ error: err, url: request.url }, 'Failed to proxy to Next.js');
-          reply.code(502).send({ error: 'Failed to proxy to web UI', message: err.message });
-        });
-        
-        if (request.body) {
-          proxyReq.write(JSON.stringify(request.body));
-        }
-        proxyReq.end();
       } else {
         // Return 404 for API routes that don't exist
         reply.code(404).send({ error: 'Not found' });
