@@ -1,4 +1,4 @@
-import { Pool, PoolConfig, QueryResult } from 'pg';
+import { Pool, PoolConfig, QueryResult, QueryResultRow } from 'pg';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -17,7 +17,7 @@ export class Database {
     this.pool = new Pool(config);
   }
 
-  async query<T = any>(text: string, params?: any[]): Promise<QueryResult<T>> {
+  async query<T extends QueryResultRow = any>(text: string, params?: any[]): Promise<QueryResult<T>> {
     const client = await this.pool.connect();
     try {
       return await client.query(text, params);
