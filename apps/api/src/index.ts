@@ -10,6 +10,7 @@ import {
   ArtifactService,
   LedgerService,
   AuthService,
+  ProjectService,
 } from '@arn/shared';
 import { authRoutes } from './routes/auth';
 import { taskRoutes } from './routes/tasks';
@@ -19,6 +20,7 @@ import { observeRoutes } from './routes/observe';
 import { reputationRoutes } from './routes/reputation';
 import { searchRoutes } from './routes/search';
 import { discoveryRoutes } from './routes/discovery';
+import { projectRoutes } from './routes/projects';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -31,6 +33,7 @@ const services = {
   artifactService: new ArtifactService(db),
   ledgerService: new LedgerService(db),
   authService: new AuthService(db),
+  projectService: new ProjectService(db),
   db,
 };
 
@@ -94,6 +97,7 @@ declare module 'fastify' {
 }
 
 fastify.register(authRoutes);
+fastify.register(projectRoutes);
 fastify.register(taskRoutes);
 fastify.register(claimRoutes);
 fastify.register(artifactRoutes);
