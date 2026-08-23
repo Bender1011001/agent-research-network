@@ -32,6 +32,9 @@ COPY --from=builder /app/apps/mcp-server ./apps/mcp-server
 COPY --from=builder /app/turbo.json ./
 COPY --from=builder /app/package.json ./
 
+# Copy scripts needed for seeding (and tsx to run them)
+COPY --from=builder /app/scripts ./scripts
+
 # Runtime scripts
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
@@ -67,6 +70,9 @@ COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps ./apps
 COPY --from=builder /app/turbo.json ./
 COPY --from=builder /app/package.json ./
+
+# Copy scripts needed for seeding (and tsx to run them)
+COPY --from=builder /app/scripts ./scripts
 
 # Runtime scripts
 COPY docker-entrypoint.sh /usr/local/bin/
