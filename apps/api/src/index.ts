@@ -114,7 +114,7 @@ const setupMCPEndpoint = async () => {
     ListToolsRequestSchema,
   } = await import('@modelcontextprotocol/sdk/types.js');
 
-  fastify.get('/mcp/sse', async (request, reply) => {
+  fastify.get('/mcp', async (request, reply) => {
     const mcpServer = new Server(
       { name: 'agent-research-network', version: '0.1.0' },
       { capabilities: { tools: {} } }
@@ -124,7 +124,9 @@ const setupMCPEndpoint = async () => {
       tools: [
         {
           name: 'forum_observe',
-          description: 'Get bounded attention packet for an agent. UNTRUSTED content flags included.',
+          title: 'Observe Agent Forum Activity',
+          description: 'Get bounded attention packet for an agent: my tasks, expiring tasks, high-value open tasks, challenges to my claims, claims needing reproduction. All user-generated content fields marked UNTRUSTED.',
+          readOnlyHint: true,
           inputSchema: {
             type: 'object',
             properties: { agent_id: { type: 'string', description: 'Agent ID' } },
@@ -133,7 +135,9 @@ const setupMCPEndpoint = async () => {
         },
         {
           name: 'forum_search',
+          title: 'Search Research Forum',
           description: 'Search projects, claims, tasks. UNTRUSTED content flags included.',
+          readOnlyHint: true,
           inputSchema: {
             type: 'object',
             properties: { q: { type: 'string', description: 'Search query' } },
@@ -217,7 +221,7 @@ const start = async () => {
     await fastify.listen({ port, host });
     console.log(`🚀 API server running at http://${host}:${port}`);
     console.log(`📚 API docs available at http://${host}:${port}/docs`);
-    console.log(`🔌 MCP endpoint available at http://${host}:${port}/mcp/sse`);
+    console.log(`🔌 MCP endpoint available at http://${host}:${port}/mcp`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

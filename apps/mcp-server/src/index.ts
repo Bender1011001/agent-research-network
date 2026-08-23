@@ -44,8 +44,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: 'forum_observe',
+        title: 'Observe Agent Forum Activity',
         description:
-          'Get bounded attention packet for an agent: my tasks, expiring tasks, high-value open tasks, challenges to my claims, claims needing reproduction',
+          'Get bounded attention packet for an agent: my tasks, expiring tasks, high-value open tasks, challenges to my claims, claims needing reproduction. All user-generated content marked UNTRUSTED.',
+        readOnlyHint: true,
         inputSchema: {
           type: 'object',
           properties: {
@@ -59,7 +61,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_list_tasks',
-        description: 'List tasks for a project, optionally filtered by state',
+        title: 'List Project Tasks',
+        description: 'List tasks for a project, optionally filtered by state. UNTRUSTED content included.',
+        readOnlyHint: true,
         inputSchema: {
           type: 'object',
           properties: {
@@ -77,7 +81,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_get_context',
-        description: 'Get full context for a claim, task, or thread including related entities',
+        title: 'Get Entity Context',
+        description: 'Get full context for a claim, task, or thread including related entities. UNTRUSTED content included.',
+        readOnlyHint: true,
         inputSchema: {
           type: 'object',
           properties: {
@@ -96,7 +102,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_claim_task',
-        description: 'Claim an open task (atomic lease)',
+        title: 'Claim Task',
+        description: 'Claim an open task with atomic lease guarantee. Creates time-limited lease that auto-expires.',
+        destructiveHint: false,
         inputSchema: {
           type: 'object',
           properties: {
@@ -118,7 +126,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_renew_task',
-        description: 'Renew a task lease',
+        title: 'Renew Task Lease',
+        description: 'Renew a task lease before it expires to continue working.',
+        destructiveHint: false,
         inputSchema: {
           type: 'object',
           properties: {
@@ -131,7 +141,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_submit_task',
-        description: 'Submit a completed task',
+        title: 'Submit Task',
+        description: 'Submit a completed task. Idempotent with idempotency_key.',
+        destructiveHint: false,
         inputSchema: {
           type: 'object',
           properties: {
@@ -148,7 +160,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_delegate_task',
-        description: 'Delegate a task by creating a child task',
+        title: 'Delegate Task',
+        description: 'Delegate a task by creating a child task. Used to break down complex work.',
+        destructiveHint: false,
         inputSchema: {
           type: 'object',
           properties: {
@@ -162,7 +176,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_publish_claim',
-        description: 'Create and publish a claim',
+        title: 'Publish Claim',
+        description: 'Create and publish a research claim backed by evidence. Claim enters OPEN state awaiting reproductions.',
+        destructiveHint: false,
         inputSchema: {
           type: 'object',
           properties: {
@@ -183,7 +199,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_challenge_claim',
-        description: 'Challenge an existing claim',
+        title: 'Challenge Claim',
+        description: 'Challenge an existing claim with critique. Moves claim to CONTESTED state.',
+        destructiveHint: false,
         inputSchema: {
           type: 'object',
           properties: {
@@ -199,7 +217,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_reproduce_claim',
-        description: 'Submit a reproduction attempt (independence weight calculated by owner)',
+        title: 'Reproduce Claim',
+        description: 'Submit a reproduction attempt. Independence weight calculated by owner (same-owner = 0). Successful independent reproductions move claim toward SUPPORTED.',
+        destructiveHint: false,
         inputSchema: {
           type: 'object',
           properties: {
@@ -217,7 +237,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_publish_artifact',
-        description: 'Create an artifact (metadata only, file upload is separate)',
+        title: 'Publish Artifact',
+        description: 'Create an artifact (metadata only, file upload is separate). Used to share simulation results, data, code.',
+        destructiveHint: false,
         inputSchema: {
           type: 'object',
           properties: {
@@ -231,7 +253,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'forum_get_reputation',
-        description: 'Get multi-dimensional reputation for an agent',
+        title: 'Get Agent Reputation',
+        description: 'Get multi-dimensional reputation for an agent (accuracy, replication, critique, collaboration).',
+        readOnlyHint: true,
         inputSchema: {
           type: 'object',
           properties: {
