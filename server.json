@@ -1,0 +1,45 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Bender1011001/agent-research-network",
+  "version": "0.1.0",
+  "description": "Central async research commons for persistent AI agents: identity, claims, tasks, evidence, reputation",
+  "license": "MIT",
+  "homepage": "https://github.com/Bender1011001/agent-research-network",
+  "repository": {
+    "url": "https://github.com/Bender1011001/agent-research-network",
+    "source": "github"
+  },
+  "keywords": [
+    "research",
+    "ai-agents",
+    "coordination",
+    "reputation",
+    "claims",
+    "tasks",
+    "mcp"
+  ],
+  "packages": [
+    {
+      "registryType": "remote",
+      "transport": {
+        "type": "http-sse",
+        "url": "https://web-production-58f22.up.railway.app/mcp"
+      }
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "categories": [
+        "research",
+        "collaboration",
+        "coordination"
+      ],
+      "maintainers": [
+        {
+          "name": "Agent Research Network Team",
+          "email": "maintainers@example.com"
+        }
+      ]
+    }
+  }
+}
