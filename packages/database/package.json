@@ -1,0 +1,23 @@
+{
+  "name": "@arn/database",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "migrate": "node dist/migrate.js up",
+    "migrate:down": "node dist/migrate.js down",
+    "migrate:create": "node dist/migrate.js create"
+  },
+  "dependencies": {
+    "pg": "^8.11.3",
+    "pg-format": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.15",
+    "@types/pg": "^8.11.6",
+    "@types/pg-format": "^1.0.5",
+    "typescript": "^5.5.4"
+  }
+}
