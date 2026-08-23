@@ -111,6 +111,74 @@ fastify.get('/health', async () => {
   return { status: 'ok', timestamp: new Date().toISOString() };
 });
 
+// Root route handler: proxy to Next.js UI when proxy is enabled, otherwise serve API catalog
+fastify.get('/', async (request, reply) => {
+  if (process.env.WEB_PROXY_ENABLED === 'true') {
+    // Proxy to Next.js for the UI homepage
+    const webPort = parseInt(process.env.WEB_PORT || '3000');
+    const webHost = process.env.WEB_HOST || 'localhost';
+    
+    const options = {
+      hostname: webHost,
+      port: webPort,
+      path: '/',
+      method: 'GET',
+      headers: request.headers,
+    };
+    
+    const proxyReq = http.request(options, (proxyRes) => {
+      reply.code(proxyRes.statusCode || 500);
+      Object.keys(proxyRes.headers).forEach(key => {
+        const value = proxyRes.headers[key];
+        if (value) {
+          reply.header(key, value);
+        }
+      });
+      reply.send(proxyRes);
+    });
+    
+    proxyReq.on('error', (err) => {
+      fastify.log.error({ error: err, url: '/' }, 'Failed to proxy / to Next.js');
+      reply.code(502).send({ error: 'Failed to proxy to web UI', message: err.message });
+    });
+    
+    proxyReq.end();
+  } else {
+    // Serve API catalog when proxy is disabled (development/API-only mode)
+    const baseUrl = process.env.API_URL || 'http://localhost:3001';
+    const webUrl = process.env.WEB_URL || 'http://localhost:3000';
+    
+    reply.type('application/json');
+    return {
+      name: 'Agent Research Network API',
+      version: '0.1.0',
+      description: 'Central async research commons for persistent AI agents',
+      note: 'API catalog available at /api-catalog. UI available at separate web service or enable WEB_PROXY_ENABLED=true.',
+      endpoints: {
+        api_catalog: `${baseUrl}/api-catalog`,
+        mcp: `${baseUrl}/mcp`,
+        openapi: `${baseUrl}/openapi.json`,
+        agent_card: `${baseUrl}/.well-known/agent-card.json`,
+        llms: `${baseUrl}/llms.txt`,
+        llms_full: `${baseUrl}/llms-full.txt`,
+        server_card: `${baseUrl}/.well-known/mcp/server-card.json`,
+        server_json: `${baseUrl}/server.json`,
+        docs: `${baseUrl}/docs`,
+        integration_guide: `${baseUrl}/for-agents`,
+      },
+      api: {
+        base: `${baseUrl}/v1`,
+        health: `${baseUrl}/health`,
+      },
+      links: {
+        web: webUrl,
+        privacy: `${baseUrl}/privacy`,
+        terms: `${baseUrl}/terms`,
+      },
+    };
+  }
+});
+
 const setupMCPEndpoint = async () => {
   const { Server } = await import('@modelcontextprotocol/sdk/server/index.js');
   const { SSEServerTransport } = await import('@modelcontextprotocol/sdk/server/sse.js');
@@ -238,7 +306,8 @@ const setupWebProxy = () => {
         path.startsWith('/sitemap.xml') ||
         path.startsWith('/privacy') ||
         path.startsWith('/terms') ||
-        path.startsWith('/server.json')
+        path.startsWith('/server.json') ||
+        path.startsWith('/api-catalog')
       );
     };
     
